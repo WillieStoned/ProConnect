@@ -1,0 +1,117 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account â€” ProConnect</title>
+  <script src="theme.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="main.css" />
+</head>
+<body class="auth-page">
+
+  <nav class="nav" style="position:relative;border-bottom:1px solid var(--border);background:var(--bg-card);">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">Pro<span>Connect</span></a>
+    </div>
+  </nav>
+
+  <main class="auth-main">
+    <div class="auth-card" style="animation: fadeUp 0.5s ease both;">
+      <h1>Create your account</h1>
+      <p class="subtitle">Already have one? <a href="login.html">Sign in</a></p>
+
+      <div id="alertBox" class="alert" style="display:none;"></div>
+
+      <div class="form-group">
+        <label for="full_name">Full name</label>
+        <input type="text" id="full_name" placeholder="Jane Smith" autocomplete="name" />
+        <p class="form-error" id="full_nameError"></p>
+      </div>
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
+        <p class="form-error" id="emailError"></p>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Create a strong password" autocomplete="new-password" />
+        <p class="form-error" id="passwordError"></p>
+        <p class="password-hint">At least 8 characters, one uppercase, one number.</p>
+      </div>
+      <div class="form-group">
+        <label for="confirm_password">Confirm password</label>
+        <input type="password" id="confirm_password" placeholder="Repeat your password" autocomplete="new-password" />
+        <p class="form-error" id="confirm_passwordError"></p>
+      </div>
+
+      <button type="button" class="btn btn--primary btn--large btn--block" id="registerBtn" onclick="handleRegister()">
+        Create account
+      </button>
+    </div>
+  </main>
+
+  <script src="api.js"></script>
+  <script>
+    if (localStorage.getItem('pc_token')) {
+      window.location.href = 'dashboard.html';
+    }
+
+    async function handleRegister() {
+      const btn = document.getElementById('registerBtn');
+      const full_name = document.getElementById('full_name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const confirm = document.getElementById('confirm_password').value;
+
+      ['full_name','email','password','confirm_password'].forEach(f => {
+        document.getElementById(f + 'Error').classList.remove('visible');
+      });
+      hideAlert();
+
+      let valid = true;
+      if (!full_name || full_name.length < 2) { showFieldError('full_name','Please enter your full name.'); valid = false; }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showFieldError('email','Please enter a valid email.'); valid = false; }
+      if (!password || password.length < 8) { showFieldError('password','Password must be at least 8 characters.'); valid = false; }
+      else if (!/[A-Z]/.test(password)) { showFieldError('password','Password must contain an uppercase letter.'); valid = false; }
+      else if (!/[0-9]/.test(password)) { showFieldError('password','Password must contain a number.'); valid = false; }
+      if (password !== confirm) { showFieldError('confirm_password','Passwords do not match.'); valid = false; }
+      if (!valid) return;
+
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div> Creating accountâ€¦';
+
+      try {
+        const data = await API.post('/auth/register', { full_name, email, password });
+        if (data?.success) {
+          showAlert('Account created! Redirecting to sign inâ€¦', 'success');
+          setTimeout(() => window.location.href = 'login.html', 1500);
+        } else {
+          showAlert(data?.message || 'Registration failed. Please try again.', 'error');
+        }
+      } catch (err) {
+        showAlert(API.formatError(err, 'Unable to register right now.'), 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Create account';
+      }
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') handleRegister(); });
+
+    function showFieldError(field, msg) {
+      const el = document.getElementById(field + 'Error');
+      el.textContent = msg; el.classList.add('visible');
+    }
+    function showAlert(msg, type) {
+      const el = document.getElementById('alertBox');
+      el.textContent = msg;
+      el.className = `alert alert--${type}`;
+      el.style.display = 'block';
+    }
+    function hideAlert() { document.getElementById('alertBox').style.display = 'none'; }
+  </script>
+</body>
+</html>
+

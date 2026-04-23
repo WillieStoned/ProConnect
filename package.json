@@ -1,0 +1,14 @@
+{
+  "name": "proconnect-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Workspace scripts for ProConnect",
+  "scripts": {
+    "start": "npm --prefix Server run start",
+    "dev": "npm --prefix Server run dev",
+    "check": "npm --prefix Server run check",
+    "lint": "npm --prefix Server run lint",
+    "security:scan": "npm --prefix Server run security:scan",
+    "build": "npm --prefix Server run build"
+  }
+}

@@ -1,0 +1,112 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In â€” ProConnect</title>
+  <script src="theme.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="main.css" />
+</head>
+<body class="auth-page">
+
+  <nav class="nav" style="position: relative; border-bottom: 1px solid var(--border); background: var(--bg-card);">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">Pro<span>Connect</span></a>
+    </div>
+  </nav>
+
+  <main class="auth-main">
+    <div class="auth-card" style="animation: fadeUp 0.5s ease both;">
+      <h1>Welcome back</h1>
+      <p class="subtitle">Don't have an account? <a href="register.html">Sign up free</a></p>
+
+      <div id="alertBox" class="alert" style="display:none;"></div>
+
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
+        <p class="form-error" id="emailError"></p>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Your password" autocomplete="current-password" />
+        <p class="form-error" id="passwordError"></p>
+      </div>
+
+      <button type="button" class="btn btn--primary btn--large btn--block" id="loginBtn" onclick="handleLogin()">
+        Sign in
+      </button>
+    </div>
+  </main>
+
+  <script src="api.js"></script>
+  <script>
+    // Redirect if already logged in
+    if (localStorage.getItem('pc_token')) {
+      window.location.href = 'dashboard.html';
+    }
+
+    async function handleLogin() {
+      const btn = document.getElementById('loginBtn');
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      // Clear errors
+      ['email', 'password'].forEach(f => {
+        document.getElementById(f + 'Error').classList.remove('visible');
+      });
+      hideAlert();
+
+      // Client-side validation
+      let valid = true;
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showFieldError('email', 'Please enter a valid email address.'); valid = false;
+      }
+      if (!password) {
+        showFieldError('password', 'Password is required.'); valid = false;
+      }
+      if (!valid) return;
+
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div> Signing inâ€¦';
+
+      try {
+        const data = await API.post('/auth/login', { email, password });
+        if (data?.success) {
+          localStorage.setItem('pc_token', data.token);
+          localStorage.setItem('pc_user', JSON.stringify(data.data));
+          showAlert('Login successful! Redirectingâ€¦', 'success');
+          setTimeout(() => window.location.href = 'dashboard.html', 800);
+        } else {
+          showAlert(data?.message || 'Login failed. Please check your details.', 'error');
+        }
+      } catch (err) {
+        showAlert(API.formatError(err, 'Unable to sign in right now.'), 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Sign in';
+      }
+    }
+
+    // Allow Enter key
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+
+    function showFieldError(field, msg) {
+      const el = document.getElementById(field + 'Error');
+      el.textContent = msg; el.classList.add('visible');
+    }
+    function showAlert(msg, type) {
+      const el = document.getElementById('alertBox');
+      el.textContent = msg;
+      el.className = `alert alert--${type}`;
+      el.style.display = 'block';
+    }
+    function hideAlert() {
+      document.getElementById('alertBox').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
+

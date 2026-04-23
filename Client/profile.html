@@ -1,0 +1,362 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Profile - ProConnect</title>
+  <script src="theme.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="main.css" />
+</head>
+<body class="dashboard-page">
+  <nav class="nav scrolled" style="z-index:200;">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">Pro<span>Connect</span></a>
+      <div style="margin-left:auto;display:flex;gap:10px;">
+        <button type="button" class="btn btn--ghost" onclick="logout()" style="padding:8px 16px;font-size:0.85rem;">Sign out</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div class="sidebar__user">
+        <div class="sidebar__avatar" id="sidebarAvatar">?</div>
+        <div class="sidebar__name" id="sidebarName">Loading...</div>
+      </div>
+      <ul class="sidebar__nav">
+        <li><a href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></a></li>
+        <li><a href="profile.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8"/></svg><span>Profile</span></a></li>
+        <li><a href="connections.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg><span>Connections</span></a></li>
+        <li><a href="messages.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>Messages</span></a></li>
+        <li><a href="events.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Events</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="main-content">
+      <h1 class="page-title">My Profile</h1>
+      <p class="page-subtitle">Manage how others see you on ProConnect</p>
+
+      <div class="profile-header">
+        <div class="profile-avatar-large" id="profileAvatar">?</div>
+        <div class="profile-info">
+          <h2 id="profileName">Loading...</h2>
+          <p class="headline" id="profileHeadline"></p>
+          <p class="location" id="profileLocation"></p>
+          <div class="profile-actions">
+            <button type="button" class="btn btn--primary" onclick="showEditModal()">Edit profile</button>
+            <button id="uploadAvatarBtn" type="button" class="btn btn--ghost" onclick="document.getElementById('avatarInput').click()">Upload photo</button>
+            <a id="resumeLink" class="btn btn--ghost is-hidden" target="_blank" rel="noreferrer">View Resume</a>
+          </div>
+          <input type="file" id="avatarInput" class="is-hidden" accept="image/png,image/jpeg,image/jpg,image/webp" onchange="handleAvatarFile(this.files[0])" />
+          <p class="profile-photo-help">Accepted: JPG, PNG, WEBP · max 2 MB</p>
+        </div>
+      </div>
+
+      <div id="alertProfile" class="alert is-hidden"></div>
+
+      <div class="section-card" id="bioCard" style="display:none;">
+        <h3 style="margin-bottom:12px;">About</h3>
+        <p id="profileBio" style="color:var(--text-muted);font-size:0.95rem;line-height:1.7;"></p>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card__header">
+          <h3>Resume</h3>
+        </div>
+        <div id="alertResume" class="alert" style="display:none;"></div>
+        <div id="uploadZone" class="resume-upload-zone" onclick="document.getElementById('resumeInput').click()" ondragover="this.classList.add('dragover');event.preventDefault();" ondragleave="this.classList.remove('dragover');" ondrop="handleDrop(event)">
+          <svg style="width:40px;height:40px;color:var(--text-muted);margin:0 auto;" viewBox="0 0 48 48" fill="none"><path d="M14 6h20a4 4 0 014 4v28a4 4 0 01-4 4H14a4 4 0 01-4-4V10a4 4 0 014-4z" stroke="currentColor" stroke-width="2"/><path d="M18 20h12M18 28h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <p>Drag and drop your PDF resume, or <strong style="color:var(--accent);">click to browse</strong></p>
+          <p style="font-size:0.75rem;margin-top:4px;">PDF only · max 5 MB</p>
+        </div>
+        <input type="file" id="resumeInput" accept=".pdf,application/pdf" style="display:none;" onchange="handleResumeFile(this.files[0])" />
+      </div>
+    </main>
+  </div>
+
+  <div id="editModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
+      <h2 style="margin-bottom:24px;font-size:1.5rem;">Edit Profile</h2>
+      <div id="alertEdit" class="alert" style="display:none;"></div>
+      <div class="form-group"><label>Full name</label><input type="text" id="edit_name" /></div>
+      <div class="form-group"><label>Headline <span style="color:var(--text-muted);font-size:0.8rem;">(e.g. Senior Engineer @ Stripe)</span></label><input type="text" id="edit_headline" /></div>
+      <div class="form-group"><label>Location</label><input type="text" id="edit_location" placeholder="City, Country" /></div>
+      <div class="form-group"><label>Bio</label><textarea id="edit_bio" rows="4" style="resize:vertical;"></textarea></div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button type="button" class="btn btn--primary" onclick="saveProfile()">Save changes</button>
+        <button type="button" class="btn btn--ghost" onclick="closeEditModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script>
+    const user = JSON.parse(localStorage.getItem('pc_user') || 'null');
+    if (!user || !localStorage.getItem('pc_token')) {
+      window.location.href = 'login.html';
+    }
+
+    const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
+    const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const profileAvatarEl = document.getElementById('profileAvatar');
+    const sidebarAvatarEl = document.getElementById('sidebarAvatar');
+    const sidebarNameEl = document.getElementById('sidebarName');
+    const uploadAvatarBtn = document.getElementById('uploadAvatarBtn');
+    let profileAvatarUrl = user?.avatar_url || '';
+
+    function getApiOrigin() {
+      try {
+        return new URL(API.BASE, window.location.origin).origin;
+      } catch {
+        return window.location.origin;
+      }
+    }
+
+    function resolveAssetUrl(url) {
+      if (!url) {
+        return '';
+      }
+      try {
+        return new URL(url, getApiOrigin()).toString();
+      } catch {
+        return url;
+      }
+    }
+
+    function syncStoredUser(patch) {
+      const storedUser = JSON.parse(localStorage.getItem('pc_user') || '{}');
+      Object.assign(storedUser, patch);
+      localStorage.setItem('pc_user', JSON.stringify(storedUser));
+    }
+
+    function renderAvatar(element, fullName, avatarUrl) {
+      if (!element) {
+        return;
+      }
+
+      const initial = (fullName || '?').charAt(0).toUpperCase();
+      element.classList.remove('profile-avatar-large--image', 'sidebar__avatar--image');
+      element.textContent = initial;
+
+      if (!avatarUrl) {
+        return;
+      }
+
+      const img = document.createElement('img');
+      img.className = 'avatar-image';
+      img.alt = `${fullName || 'User'} profile photo`;
+      img.src = resolveAssetUrl(avatarUrl);
+      img.onerror = () => {
+        element.classList.remove('profile-avatar-large--image', 'sidebar__avatar--image');
+        element.textContent = initial;
+      };
+
+      element.textContent = '';
+      element.appendChild(img);
+      if (element.classList.contains('profile-avatar-large')) {
+        element.classList.add('profile-avatar-large--image');
+      }
+      if (element.classList.contains('sidebar__avatar')) {
+        element.classList.add('sidebar__avatar--image');
+      }
+    }
+
+    function showProfileAlert(msg, type = 'error') {
+      const el = document.getElementById('alertProfile');
+      el.textContent = msg;
+      el.className = `alert alert--${type}`;
+      setTimeout(() => {
+        el.classList.add('is-hidden');
+      }, 4000);
+    }
+
+    renderAvatar(sidebarAvatarEl, user?.full_name || '?', user?.avatar_url);
+    sidebarNameEl.textContent = user?.full_name || '';
+
+    function showResumeAlert(msg, type = 'error') {
+      const el = document.getElementById('alertResume');
+      el.textContent = msg;
+      el.className = `alert alert--${type}`;
+      el.style.display = 'block';
+      setTimeout(() => {
+        el.style.display = 'none';
+      }, 4000);
+    }
+
+    function showEditAlert(msg, type = 'error') {
+      const el = document.getElementById('alertEdit');
+      el.textContent = msg;
+      el.className = `alert alert--${type}`;
+      el.style.display = 'block';
+    }
+
+    function resetUploadZone() {
+      document.getElementById('uploadZone').innerHTML = '<svg style="width:40px;height:40px;color:var(--text-muted);margin:0 auto;" viewBox="0 0 48 48" fill="none"><path d="M14 6h20a4 4 0 014 4v28a4 4 0 01-4 4H14a4 4 0 01-4-4V10a4 4 0 014-4z" stroke="currentColor" stroke-width="2"/><path d="M18 20h12M18 28h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><p>Drag and drop your PDF resume, or <strong style="color:var(--accent);">click to browse</strong></p><p style="font-size:0.75rem;margin-top:4px;">PDF only · max 5 MB</p>';
+    }
+
+    async function loadProfile() {
+      try {
+        const data = await API.authGet('/auth/me');
+        if (!data?.success || !data.data) {
+          throw new Error('Profile data is not available.');
+        }
+
+        const profile = data.data;
+        document.getElementById('profileName').textContent = profile.full_name;
+        document.getElementById('profileHeadline').textContent = profile.headline || 'No headline yet';
+        document.getElementById('profileLocation').textContent = profile.location ? profile.location : '';
+        profileAvatarUrl = profile.avatar_url || '';
+
+        renderAvatar(profileAvatarEl, profile.full_name, profileAvatarUrl);
+        renderAvatar(sidebarAvatarEl, profile.full_name, profileAvatarUrl);
+        sidebarNameEl.textContent = profile.full_name;
+        syncStoredUser({ full_name: profile.full_name, avatar_url: profileAvatarUrl });
+
+        if (profile.bio) {
+          document.getElementById('profileBio').textContent = profile.bio;
+          document.getElementById('bioCard').style.display = 'block';
+        } else {
+          document.getElementById('bioCard').style.display = 'none';
+        }
+
+        const resumeLink = document.getElementById('resumeLink');
+        if (profile.resume_url) {
+          resumeLink.href = resolveAssetUrl(profile.resume_url);
+          resumeLink.classList.remove('is-hidden');
+        } else {
+          resumeLink.classList.add('is-hidden');
+        }
+      } catch (err) {
+        showResumeAlert(API.formatError(err, 'Unable to load profile details.'));
+      }
+    }
+
+    function showEditModal() {
+      document.getElementById('edit_name').value = document.getElementById('profileName').textContent === 'Loading...' ? '' : document.getElementById('profileName').textContent;
+      document.getElementById('edit_headline').value = document.getElementById('profileHeadline').textContent === 'No headline yet' ? '' : document.getElementById('profileHeadline').textContent;
+      document.getElementById('edit_location').value = document.getElementById('profileLocation').textContent || '';
+      document.getElementById('edit_bio').value = document.getElementById('profileBio').textContent || '';
+      document.getElementById('alertEdit').style.display = 'none';
+      document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').style.display = 'none';
+    }
+
+    async function saveProfile() {
+      const body = {
+        full_name: document.getElementById('edit_name').value.trim(),
+        headline: document.getElementById('edit_headline').value.trim(),
+        location: document.getElementById('edit_location').value.trim(),
+        bio: document.getElementById('edit_bio').value.trim(),
+      };
+
+      if (!body.full_name) {
+        showEditAlert('Full name is required.');
+        return;
+      }
+
+      try {
+        await API.authPut('/users/me', body);
+
+        closeEditModal();
+        await loadProfile();
+      } catch (err) {
+        showEditAlert(API.formatError(err, 'Unable to save profile changes.'));
+      }
+    }
+
+    async function handleAvatarFile(file) {
+      if (!file) {
+        return;
+      }
+
+      if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+        showProfileAlert('Only JPG, PNG, or WEBP images are allowed.');
+        return;
+      }
+
+      if (file.size > MAX_AVATAR_SIZE) {
+        showProfileAlert('Image must be under 2 MB.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      uploadAvatarBtn.disabled = true;
+      uploadAvatarBtn.innerHTML = '<span class="spinner"></span>Uploading...';
+
+      try {
+        const data = await API.upload('/users/me/avatar', formData);
+        profileAvatarUrl = data?.data?.avatar_url || profileAvatarUrl;
+        const fullName = document.getElementById('profileName').textContent || (user?.full_name || 'User');
+
+        renderAvatar(profileAvatarEl, fullName, profileAvatarUrl);
+        renderAvatar(sidebarAvatarEl, fullName, profileAvatarUrl);
+        syncStoredUser({ avatar_url: profileAvatarUrl, full_name: fullName });
+        showProfileAlert('Profile photo updated successfully.', 'success');
+      } catch (err) {
+        showProfileAlert(API.formatError(err, 'Unable to upload profile photo right now.'));
+      } finally {
+        uploadAvatarBtn.disabled = false;
+        uploadAvatarBtn.textContent = 'Upload photo';
+        document.getElementById('avatarInput').value = '';
+      }
+    }
+
+    async function handleResumeFile(file) {
+      if (!file) {
+        return;
+      }
+
+      if (file.type !== 'application/pdf') {
+        showResumeAlert('Only PDF files are allowed.');
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        showResumeAlert('File must be under 5 MB.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('resume', file);
+
+      document.getElementById('uploadZone').innerHTML = '<div class="spinner" style="margin:0 auto;"></div><p style="margin-top:8px;">Uploading...</p>';
+
+      try {
+        const data = await API.upload('/users/me/resume', formData);
+
+        showResumeAlert('Resume uploaded successfully!', 'success');
+        const link = document.getElementById('resumeLink');
+        link.href = resolveAssetUrl(data.data.resume_url);
+        link.classList.remove('is-hidden');
+      } catch (err) {
+        showResumeAlert(API.formatError(err, 'Unable to upload resume right now.'));
+      } finally {
+        resetUploadZone();
+      }
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('uploadZone').classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        handleResumeFile(file);
+      }
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'index.html';
+    }
+
+    loadProfile();
+  </script>
+</body>
+</html>

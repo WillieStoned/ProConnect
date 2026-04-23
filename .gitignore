@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+Server/node_modules/
+
+# Environment secrets
+.env
+Server/.env
+
+# Local uploads and logs
+Server/uploads/
+*.log
+tmp_*.log
+
+# OS/editor
+.vscode/
+.DS_Store
+Thumbs.db

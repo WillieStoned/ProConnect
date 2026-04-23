@@ -1,0 +1,263 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - ProConnect</title>
+  <script src="theme.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" >
+  <link rel="stylesheet" href="main.css">
+</head>
+<body class="dashboard-page">
+  <nav class="nav scrolled top-nav--app">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">Pro<span>Connect</span></a>
+      <div class="top-nav__actions">
+        <span id="navUserName" class="top-nav__user"></span>
+        <button type="button" class="btn btn--ghost btn--compact" onclick="logout()">Sign out</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div class="sidebar__user">
+        <div class="sidebar__avatar" id="sidebarAvatar">?</div>
+        <div class="sidebar__name" id="sidebarName">Loading...</div>
+        <div class="sidebar__headline" id="sidebarHeadline"></div>
+      </div>
+      <ul class="sidebar__nav">
+        <li><a href="dashboard.html" class="active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span>Dashboard</span>
+        </a></li>
+        <li><a href="profile.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8"/></svg>
+          <span>Profile</span>
+        </a></li>
+        <li><a href="connections.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+          <span>Connections</span>
+        </a></li>
+        <li><a href="messages.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <span>Messages</span>
+        </a></li>
+        <li><a href="events.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <span>Events</span>
+        </a></li>
+      </ul>
+    </aside>
+
+    <main class="main-content">
+      <h1 class="page-title" id="greetingTitle">Welcome</h1>
+      <p class="page-subtitle">Here's what's happening in your network</p>
+      <div id="dashboardAlert" class="alert is-hidden"></div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-card__value" id="statsConnections">-</div>
+          <div class="stat-card__label">Connections</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__value" id="statsMessages">-</div>
+          <div class="stat-card__label">Unread messages</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__value" id="statsEvents">-</div>
+          <div class="stat-card__label">Upcoming events</div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card__header">
+          <h3>Pending requests</h3>
+          <a href="connections.html" class="btn btn--ghost btn--mini">View all</a>
+        </div>
+        <ul class="user-list" id="pendingList">
+          <li class="empty-state">Loading...</li>
+        </ul>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card__header">
+          <h3>Discover people</h3>
+          <div class="section-controls">
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Search professionals..."
+              class="search-input"
+              oninput="debounceSearch(this.value)"
+            >
+          </div>
+        </div>
+        <ul class="user-list" id="discoverList">
+          <li class="empty-state">Loading...</li>
+        </ul>
+      </div>
+    </main>
+  </div>
+
+  <script src="api.js"></script>
+  <script>
+    const user = JSON.parse(localStorage.getItem('pc_user') || 'null');
+    if (!user || !localStorage.getItem('pc_token')) {
+      window.location.href = 'login.html';
+    }
+
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    const firstName = user?.full_name?.split(' ')[0] || 'there';
+
+    document.getElementById('greetingTitle').textContent = `${greeting}, ${firstName}`;
+    document.getElementById('navUserName').textContent = user?.full_name || '';
+    document.getElementById('sidebarName').textContent = user?.full_name || '';
+    document.getElementById('sidebarAvatar').textContent = (user?.full_name || '?').charAt(0).toUpperCase();
+
+    function showDashboardAlert(msg, type = 'error') {
+      const el = document.getElementById('dashboardAlert');
+      el.textContent = msg;
+      el.className = `alert alert--${type}`;
+      el.classList.remove('is-hidden');
+    }
+
+    function hideDashboardAlert() {
+      document.getElementById('dashboardAlert').classList.add('is-hidden');
+    }
+
+    async function loadDashboard() {
+      hideDashboardAlert();
+      const [connResult, pendingResult, eventsResult, inboxResult] = await Promise.allSettled([
+        API.get('/connections'),
+        API.get('/connections/pending'),
+        API.get('/events'),
+        API.get('/messages'),
+      ]);
+
+      const hasFatalFailure = [connResult, pendingResult, eventsResult, inboxResult].every((r) => r.status === 'rejected');
+      if (hasFatalFailure) {
+        showDashboardAlert('Unable to load dashboard right now. Please refresh.');
+        return;
+      }
+
+      const connections = connResult.status === 'fulfilled' ? (connResult.value.data || []) : [];
+      const pending = pendingResult.status === 'fulfilled' ? (pendingResult.value.data || []) : [];
+      const events = eventsResult.status === 'fulfilled' ? (eventsResult.value.data || []) : [];
+      const inbox = inboxResult.status === 'fulfilled' ? (inboxResult.value.data || []) : [];
+
+      document.getElementById('statsConnections').textContent = connections.length;
+      renderPending(pending);
+      document.getElementById('statsEvents').textContent = events.length;
+
+      const unread = inbox.reduce((sum, convo) => sum + (convo.unread_count || 0), 0);
+      document.getElementById('statsMessages').textContent = unread;
+
+      if ([connResult, pendingResult, eventsResult, inboxResult].some((r) => r.status === 'rejected')) {
+        showDashboardAlert('Some dashboard sections could not load. Showing available data.');
+      }
+
+      await loadDiscover('');
+    }
+
+    async function loadDiscover(query) {
+      const list = document.getElementById('discoverList');
+
+      try {
+        const data = await API.get(`/users?q=${encodeURIComponent(query)}&limit=6`);
+        const users = (data.data || []).filter((u) => u.user_id !== user?.user_id);
+
+        if (!users.length) {
+          list.innerHTML = '<li class="empty-state">No users found.</li>';
+          return;
+        }
+
+        list.innerHTML = users.map((u) => `
+          <li class="user-item">
+            <div class="user-item__avatar">${u.full_name.charAt(0)}</div>
+            <div>
+              <div class="user-item__name">${escHtml(u.full_name)}</div>
+              <div class="user-item__sub">${escHtml(u.headline || u.location || '')}</div>
+            </div>
+            <div class="user-item__actions">
+              <button class="btn btn--solid btn--mini" onclick="connect(${u.user_id}, this)">Connect</button>
+            </div>
+          </li>
+        `).join('');
+      } catch (err) {
+        list.innerHTML = '<li class="empty-state">Unable to load users.</li>';
+        showDashboardAlert(API.formatError(err, 'Unable to search users right now.'));
+      }
+    }
+
+    function renderPending(requests) {
+      const list = document.getElementById('pendingList');
+      if (!requests.length) {
+        list.innerHTML = '<li class="empty-state">No pending requests.</li>';
+        return;
+      }
+
+      list.innerHTML = requests.map((r) => `
+        <li class="user-item">
+          <div class="user-item__avatar">${r.full_name.charAt(0)}</div>
+          <div>
+            <div class="user-item__name">${escHtml(r.full_name)}</div>
+            <div class="user-item__sub">${escHtml(r.headline || '')}</div>
+          </div>
+          <div class="user-item__actions actions-inline">
+            <button class="btn btn--primary btn--mini" onclick="respond(${r.connection_id}, 'accepted', this)">Accept</button>
+            <button class="btn btn--ghost btn--mini" onclick="respond(${r.connection_id}, 'rejected', this)">Decline</button>
+          </div>
+        </li>
+      `).join('');
+    }
+
+    async function connect(userId, btn) {
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+
+      try {
+        await API.post(`/connections/request/${userId}`, {});
+        btn.textContent = 'Sent';
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = original;
+        showDashboardAlert(API.formatError(err, 'Unable to send connection request.'));
+      }
+    }
+
+    async function respond(connectionId, status, btn) {
+      btn.disabled = true;
+
+      try {
+        await API.put(`/connections/${connectionId}/respond`, { status });
+        await loadDashboard();
+      } catch (err) {
+        btn.disabled = false;
+        showDashboardAlert(API.formatError(err, 'Unable to respond to request.'));
+      }
+    }
+
+    let debounceTimer;
+    function debounceSearch(val) {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => loadDiscover(val), 300);
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function logout() {
+      localStorage.removeItem('pc_token');
+      localStorage.removeItem('pc_user');
+      window.location.href = 'index.html';
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>

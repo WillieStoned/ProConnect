@@ -1,0 +1,287 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Messages - ProConnect</title>
+  <script src="theme.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="main.css" />
+</head>
+<body class="dashboard-page">
+  <nav class="nav scrolled top-nav--app">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">Pro<span>Connect</span></a>
+      <div class="top-nav__actions">
+        <button type="button" class="btn btn--ghost btn--compact" onclick="logout()">Sign out</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div class="sidebar__user">
+        <div class="sidebar__avatar" id="sidebarAvatar">?</div>
+        <div class="sidebar__name" id="sidebarName">Loading...</div>
+      </div>
+      <ul class="sidebar__nav">
+        <li><a href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></a></li>
+        <li><a href="profile.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8"/></svg><span>Profile</span></a></li>
+        <li><a href="connections.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg><span>Connections</span></a></li>
+        <li><a href="messages.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>Messages</span></a></li>
+        <li><a href="events.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Events</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="main-content">
+      <h1 class="page-title">Messages</h1>
+      <p class="page-subtitle">Stay in touch with your network.</p>
+      <div id="msgAlert" class="alert is-hidden"></div>
+
+      <div class="section-card section-card--flush">
+        <div class="messages-layout messages-layout--panel">
+          <aside class="convo-list" id="convoList"></aside>
+          <section class="chat-area">
+            <div class="chat-header">
+              <div>
+                <div id="chatTitle" class="chat-title">Select a conversation</div>
+                <div id="chatSubtitle" class="chat-subtitle">Choose a connection to start chatting.</div>
+              </div>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+              <div class="empty-state">No conversation selected.</div>
+            </div>
+            <div class="chat-input-bar">
+              <input id="messageInput" type="text" placeholder="Write a message..." maxlength="2000" />
+              <button id="sendBtn" type="button" class="btn btn--primary" onclick="sendMessage()">Send</button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="api.js"></script>
+  <script>
+    const user = JSON.parse(localStorage.getItem('pc_user') || 'null');
+    if (!user || !localStorage.getItem('pc_token')) {
+      window.location.href = 'login.html';
+    }
+
+    document.getElementById('sidebarAvatar').textContent = (user?.full_name || '?').charAt(0).toUpperCase();
+    document.getElementById('sidebarName').textContent = user?.full_name || 'User';
+
+    let contacts = [];
+    let selectedUserId = null;
+
+    function showAlert(message, type = 'error') {
+      const box = document.getElementById('msgAlert');
+      box.textContent = message;
+      box.className = `alert alert--${type}`;
+      box.classList.remove('is-hidden');
+    }
+
+    function hideAlert() {
+      document.getElementById('msgAlert').classList.add('is-hidden');
+    }
+
+    function escHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+
+    function formatTime(dateValue) {
+      if (!dateValue) {
+        return '';
+      }
+      const dt = new Date(dateValue);
+      if (Number.isNaN(dt.getTime())) {
+        return '';
+      }
+      return dt.toLocaleString();
+    }
+
+    async function loadContacts() {
+      hideAlert();
+      const [inboxResult, connectionsResult] = await Promise.allSettled([
+        API.get('/messages'),
+        API.get('/connections'),
+      ]);
+
+      if (inboxResult.status === 'rejected' && connectionsResult.status === 'rejected') {
+        showAlert('Unable to load messages right now. Please refresh.');
+        return;
+      }
+
+      const inboxItems = inboxResult.status === 'fulfilled' ? (inboxResult.value.data || []) : [];
+      const connectionItems = connectionsResult.status === 'fulfilled' ? (connectionsResult.value.data || []) : [];
+      const byUserId = new Map();
+
+      for (const convo of inboxItems) {
+        byUserId.set(Number(convo.user_id), {
+          user_id: Number(convo.user_id),
+          full_name: convo.full_name,
+          avatar_url: convo.avatar_url,
+          last_message: convo.last_message,
+          last_message_time: convo.last_message_time,
+          unread_count: Number(convo.unread_count || 0),
+        });
+      }
+
+      for (const conn of connectionItems) {
+        const id = Number(conn.user_id);
+        if (!byUserId.has(id)) {
+          byUserId.set(id, {
+            user_id: id,
+            full_name: conn.full_name,
+            avatar_url: conn.avatar_url,
+            last_message: '',
+            last_message_time: null,
+            unread_count: 0,
+          });
+        }
+      }
+
+      contacts = Array.from(byUserId.values()).sort((a, b) => {
+        const tA = a.last_message_time ? new Date(a.last_message_time).getTime() : 0;
+        const tB = b.last_message_time ? new Date(b.last_message_time).getTime() : 0;
+        return tB - tA;
+      });
+
+      if (inboxResult.status === 'rejected' || connectionsResult.status === 'rejected') {
+        showAlert('Some message data could not load. Showing available contacts.');
+      }
+
+      renderConversationList();
+      autoSelectConversation();
+    }
+
+    function renderConversationList() {
+      const list = document.getElementById('convoList');
+
+      if (!contacts.length) {
+        list.innerHTML = '<div class="empty-state empty-state--padded">No conversations yet. Connect with people first.</div>';
+        return;
+      }
+
+      list.innerHTML = contacts.map((item) => {
+        const isActive = selectedUserId === item.user_id;
+        return `
+          <div class="convo-item ${isActive ? 'active' : ''}" onclick="selectConversation(${item.user_id})">
+            <div class="convo-avatar">${escHtml((item.full_name || '?').charAt(0))}</div>
+            <div class="convo-item__body">
+              <div class="convo-name">${escHtml(item.full_name || 'Unknown user')}</div>
+              <div class="convo-last">${escHtml(item.last_message || 'No messages yet')}</div>
+            </div>
+            ${item.unread_count > 0 ? `<span class="unread-badge">${item.unread_count}</span>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function autoSelectConversation() {
+      const params = new URLSearchParams(window.location.search);
+      const queryUser = Number.parseInt(params.get('user') || '', 10);
+
+      if (Number.isInteger(queryUser) && contacts.some((c) => c.user_id === queryUser)) {
+        selectConversation(queryUser);
+        return;
+      }
+
+      if (selectedUserId && contacts.some((c) => c.user_id === selectedUserId)) {
+        selectConversation(selectedUserId);
+        return;
+      }
+
+      if (contacts.length > 0) {
+        selectConversation(contacts[0].user_id);
+      }
+    }
+
+    async function selectConversation(userId) {
+      selectedUserId = Number(userId);
+      renderConversationList();
+
+      const selected = contacts.find((c) => c.user_id === selectedUserId);
+      document.getElementById('chatTitle').textContent = selected?.full_name || 'Conversation';
+      document.getElementById('chatSubtitle').textContent = selected?.last_message_time ? `Last activity: ${formatTime(selected.last_message_time)}` : 'No messages yet. Start the conversation.';
+
+      try {
+        const convoData = await API.get(`/messages/${selectedUserId}`);
+        renderMessages(convoData.data || []);
+
+        for (const contact of contacts) {
+          if (contact.user_id === selectedUserId) {
+            contact.unread_count = 0;
+          }
+        }
+        renderConversationList();
+      } catch (err) {
+        showAlert(API.formatError(err, 'Unable to load conversation.'));
+      }
+    }
+
+    function renderMessages(messages) {
+      const container = document.getElementById('chatMessages');
+
+      if (!messages.length) {
+        container.innerHTML = '<div class="empty-state">No messages yet. Say hello.</div>';
+        return;
+      }
+
+      container.innerHTML = messages.map((msg) => {
+        const sentByMe = Number(msg.sender_id) === Number(user.user_id);
+        return `
+          <div class="message-bubble ${sentByMe ? 'message-bubble--sent' : 'message-bubble--received'}">
+            ${escHtml(msg.content)}
+          </div>
+        `;
+      }).join('');
+
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const sendBtn = document.getElementById('sendBtn');
+      const content = input.value.trim();
+
+      if (!selectedUserId) {
+        showAlert('Select a conversation first.');
+        return;
+      }
+
+      if (!content) {
+        return;
+      }
+
+      sendBtn.disabled = true;
+
+      try {
+        await API.post('/messages', { receiver_id: selectedUserId, content });
+        input.value = '';
+        await selectConversation(selectedUserId);
+        await loadContacts();
+      } catch (err) {
+        showAlert(API.formatError(err, 'Unable to send message right now.'));
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('pc_token');
+      localStorage.removeItem('pc_user');
+      window.location.href = 'index.html';
+    }
+
+    document.getElementById('messageInput').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        sendMessage();
+      }
+    });
+
+    loadContacts();
+  </script>
+</body>
+</html>

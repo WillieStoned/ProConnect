@@ -1,0 +1,248 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connections - ProConnect</title>
+  <script src="theme.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="main.css" />
+</head>
+<body class="dashboard-page">
+  <nav class="nav scrolled" style="z-index:200;">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">Pro<span>Connect</span></a>
+      <div style="margin-left:auto;display:flex;gap:10px;align-items:center;">
+        <button type="button" class="btn btn--ghost" onclick="logout()" style="padding:8px 16px;font-size:0.85rem;">Sign out</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div class="sidebar__user">
+        <div class="sidebar__avatar" id="sidebarAvatar">?</div>
+        <div class="sidebar__name" id="sidebarName">Loading...</div>
+      </div>
+      <ul class="sidebar__nav">
+        <li><a href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></a></li>
+        <li><a href="profile.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8"/></svg><span>Profile</span></a></li>
+        <li><a href="connections.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg><span>Connections</span></a></li>
+        <li><a href="messages.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>Messages</span></a></li>
+        <li><a href="events.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Events</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="main-content">
+      <h1 class="page-title">Connections</h1>
+      <p class="page-subtitle">Manage your network and grow with professionals in your industry.</p>
+      <div id="connAlert" class="alert" style="display:none;"></div>
+
+      <div class="section-card">
+        <div class="section-card__header">
+          <h3>Pending requests</h3>
+          <span style="font-size:0.85rem;color:var(--text-muted);" id="pendingCount">0 pending</span>
+        </div>
+        <ul class="user-list" id="pendingList">
+          <li style="color:var(--text-muted);font-size:0.9rem;">Loading pending requests...</li>
+        </ul>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card__header">
+          <h3>My connections</h3>
+          <span style="font-size:0.85rem;color:var(--text-muted);" id="connectionsCount">0 connected</span>
+        </div>
+        <ul class="user-list" id="connectionsList">
+          <li style="color:var(--text-muted);font-size:0.9rem;">Loading connections...</li>
+        </ul>
+      </div>
+
+      <div class="section-card">
+        <div class="section-card__header">
+          <h3>Discover people</h3>
+          <input id="discoverInput" type="text" placeholder="Search by name, headline, or bio..." style="padding:8px 12px;background:var(--bg-muted);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:0.85rem;outline:none;width:260px;" />
+        </div>
+        <ul class="user-list" id="discoverList">
+          <li style="color:var(--text-muted);font-size:0.9rem;">Start typing to discover professionals.</li>
+        </ul>
+      </div>
+    </main>
+  </div>
+
+  <script src="api.js"></script>
+  <script>
+    const user = JSON.parse(localStorage.getItem('pc_user') || 'null');
+    if (!user || !localStorage.getItem('pc_token')) {
+      window.location.href = 'login.html';
+    }
+
+    document.getElementById('sidebarAvatar').textContent = (user?.full_name || '?').charAt(0).toUpperCase();
+    document.getElementById('sidebarName').textContent = user?.full_name || 'User';
+
+    let searchTimer = null;
+
+    function showAlert(message, type = 'error') {
+      const box = document.getElementById('connAlert');
+      box.textContent = message;
+      box.className = `alert alert--${type}`;
+      box.style.display = 'block';
+    }
+
+    function hideAlert() {
+      document.getElementById('connAlert').style.display = 'none';
+    }
+
+    function escHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+
+    async function loadConnectionData() {
+      hideAlert();
+      try {
+        const [connectionsData, pendingData] = await Promise.all([
+          API.get('/connections'),
+          API.get('/connections/pending'),
+        ]);
+
+        renderConnections(connectionsData.data || []);
+        renderPending(pendingData.data || []);
+      } catch (err) {
+        showAlert(API.formatError(err, 'Unable to load connections right now.'));
+      }
+    }
+
+    function renderPending(requests) {
+      const list = document.getElementById('pendingList');
+      document.getElementById('pendingCount').textContent = `${requests.length} pending`;
+
+      if (!requests.length) {
+        list.innerHTML = '<li style="color:var(--text-muted);font-size:0.9rem;">No pending requests.</li>';
+        return;
+      }
+
+      list.innerHTML = requests.map((item) => `
+        <li class="user-item">
+          <div class="user-item__avatar">${escHtml(item.full_name.charAt(0))}</div>
+          <div>
+            <div class="user-item__name">${escHtml(item.full_name)}</div>
+            <div class="user-item__sub">${escHtml(item.headline || 'Professional on ProConnect')}</div>
+          </div>
+          <div class="user-item__actions" style="display:flex;gap:8px;">
+            <button class="btn btn--primary" style="padding:7px 14px;font-size:0.8rem;" onclick="respondToRequest(${item.connection_id}, 'accepted', this)">Accept</button>
+            <button class="btn btn--ghost" style="padding:7px 14px;font-size:0.8rem;" onclick="respondToRequest(${item.connection_id}, 'rejected', this)">Decline</button>
+          </div>
+        </li>
+      `).join('');
+    }
+
+    function renderConnections(connections) {
+      const list = document.getElementById('connectionsList');
+      document.getElementById('connectionsCount').textContent = `${connections.length} connected`;
+
+      if (!connections.length) {
+        list.innerHTML = '<li style="color:var(--text-muted);font-size:0.9rem;">No accepted connections yet.</li>';
+        return;
+      }
+
+      list.innerHTML = connections.map((item) => `
+        <li class="user-item">
+          <div class="user-item__avatar">${escHtml(item.full_name.charAt(0))}</div>
+          <div>
+            <div class="user-item__name">${escHtml(item.full_name)}</div>
+            <div class="user-item__sub">${escHtml(item.headline || 'Connected professional')}</div>
+          </div>
+          <div class="user-item__actions">
+            <button class="btn btn--solid" style="padding:7px 14px;font-size:0.8rem;" onclick="openMessages(${item.user_id})">Message</button>
+          </div>
+        </li>
+      `).join('');
+    }
+
+    async function respondToRequest(connectionId, status, btn) {
+      btn.disabled = true;
+      try {
+        await API.put(`/connections/${connectionId}/respond`, { status });
+        showAlert(`Request ${status}.`, 'success');
+        await loadConnectionData();
+      } catch (err) {
+        btn.disabled = false;
+        showAlert(API.formatError(err, 'Unable to update request.'));
+      }
+    }
+
+    async function searchUsers(query) {
+      const list = document.getElementById('discoverList');
+      const cleaned = query.trim();
+
+      if (!cleaned) {
+        list.innerHTML = '<li style="color:var(--text-muted);font-size:0.9rem;">Start typing to discover professionals.</li>';
+        return;
+      }
+
+      list.innerHTML = '<li style="color:var(--text-muted);font-size:0.9rem;">Searching...</li>';
+
+      try {
+        const data = await API.get(`/users?q=${encodeURIComponent(cleaned)}&limit=10`);
+        const people = (data.data || []).filter((person) => person.user_id !== user.user_id);
+
+        if (!people.length) {
+          list.innerHTML = '<li style="color:var(--text-muted);font-size:0.9rem;">No users found.</li>';
+          return;
+        }
+
+        list.innerHTML = people.map((person) => `
+          <li class="user-item">
+            <div class="user-item__avatar">${escHtml(person.full_name.charAt(0))}</div>
+            <div>
+              <div class="user-item__name">${escHtml(person.full_name)}</div>
+              <div class="user-item__sub">${escHtml(person.headline || person.location || 'Professional on ProConnect')}</div>
+            </div>
+            <div class="user-item__actions" style="display:flex;gap:8px;">
+              <button class="btn btn--solid" style="padding:7px 14px;font-size:0.8rem;" onclick="sendConnectionRequest(${person.user_id}, this)">Connect</button>
+              <button class="btn btn--ghost" style="padding:7px 14px;font-size:0.8rem;" onclick="openMessages(${person.user_id})">Message</button>
+            </div>
+          </li>
+        `).join('');
+      } catch (err) {
+        list.innerHTML = '<li style="color:var(--text-muted);font-size:0.9rem;">Unable to search right now.</li>';
+        showAlert(API.formatError(err, 'User search failed.'));
+      }
+    }
+
+    async function sendConnectionRequest(userId, btn) {
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+
+      try {
+        await API.post(`/connections/request/${userId}`, {});
+        btn.textContent = 'Sent';
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        showAlert(API.formatError(err, 'Unable to send connection request.'));
+      }
+    }
+
+    function openMessages(userId) {
+      window.location.href = `messages.html?user=${encodeURIComponent(userId)}`;
+    }
+
+    function logout() {
+      localStorage.removeItem('pc_token');
+      localStorage.removeItem('pc_user');
+      window.location.href = 'index.html';
+    }
+
+    document.getElementById('discoverInput').addEventListener('input', (event) => {
+      clearTimeout(searchTimer);
+      const value = event.target.value;
+      searchTimer = setTimeout(() => searchUsers(value), 300);
+    });
+
+    loadConnectionData();
+  </script>
+</body>
+</html>

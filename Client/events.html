@@ -1,0 +1,199 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Events - ProConnect</title>
+  <script src="theme.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="main.css" />
+  <style>
+    .events-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+    .event-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; transition: border-color var(--transition), transform var(--transition); }
+    .event-card:hover { border-color: rgba(255,255,255,0.18); transform: translateY(-2px); }
+    .event-card__type { display: inline-block; font-size: 0.72rem; font-weight: 500; padding: 3px 10px; border-radius: 20px; margin-bottom: 12px; background: rgba(232,168,80,0.1); color: var(--accent); border: 1px solid rgba(232,168,80,0.2); text-transform: capitalize; }
+    .event-card h3 { margin-bottom: 8px; font-size: 1.05rem; }
+    .event-card__meta { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px; }
+    .event-card__actions { margin-top: 16px; }
+  </style>
+</head>
+<body class="dashboard-page">
+  <nav class="nav scrolled" style="z-index:200;">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">Pro<span>Connect</span></a>
+      <div style="margin-left:auto;"><button type="button" class="btn btn--ghost" onclick="logout()" style="padding:8px 16px;font-size:0.85rem;">Sign out</button></div>
+    </div>
+  </nav>
+  <div class="dashboard-layout">
+    <aside class="sidebar">
+      <div class="sidebar__user"><div class="sidebar__avatar" id="sidebarAvatar">?</div><div class="sidebar__name" id="sidebarName">Loading...</div></div>
+      <ul class="sidebar__nav">
+        <li><a href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></a></li>
+        <li><a href="profile.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8"/></svg><span>Profile</span></a></li>
+        <li><a href="connections.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg><span>Connections</span></a></li>
+        <li><a href="messages.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>Messages</span></a></li>
+        <li><a href="events.html" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Events</span></a></li>
+      </ul>
+    </aside>
+    <main class="main-content">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:36px;">
+        <div>
+          <h1 class="page-title">Events</h1>
+          <p class="page-subtitle" style="margin-bottom:0;">Discover and join professional events</p>
+        </div>
+        <button type="button" class="btn btn--primary" onclick="openCreateModal()">+ Host event</button>
+      </div>
+      <div id="alertBox" class="alert" style="display:none;"></div>
+      <div class="events-grid" id="eventsGrid"><p style="color:var(--text-muted);">Loading...</p></div>
+    </main>
+  </div>
+
+  <div id="createModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:300;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
+      <h2 style="margin-bottom:24px;font-size:1.5rem;">Create Event</h2>
+      <div class="form-group"><label>Title</label><input type="text" id="ev_title" placeholder="Event name" /></div>
+      <div class="form-group"><label>Description</label><textarea id="ev_desc" rows="3" style="resize:vertical;"></textarea></div>
+      <div class="form-group"><label>Location</label><input type="text" id="ev_location" placeholder="City or Online URL" /></div>
+      <div class="form-group"><label>Type</label>
+        <select id="ev_type"><option value="in-person">In-person</option><option value="virtual">Virtual</option><option value="hybrid">Hybrid</option></select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label>Start date</label><input type="datetime-local" id="ev_start" /></div>
+        <div class="form-group"><label>End date</label><input type="datetime-local" id="ev_end" /></div>
+      </div>
+      <div class="form-group"><label>Max capacity <span style="color:var(--text-muted);font-size:0.8rem;">(optional)</span></label><input type="number" id="ev_cap" min="1" placeholder="Unlimited" /></div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button type="button" class="btn btn--primary" onclick="createEvent()">Create</button>
+        <button type="button" class="btn btn--ghost" onclick="closeCreateModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script>
+    const user = JSON.parse(localStorage.getItem('pc_user') || 'null');
+    if (!user || !localStorage.getItem('pc_token')) {
+      window.location.href = 'login.html';
+    }
+
+    document.getElementById('sidebarAvatar').textContent = (user?.full_name || '?').charAt(0).toUpperCase();
+    document.getElementById('sidebarName').textContent = user?.full_name || '';
+
+    function showAlert(message, type = 'error') {
+      const box = document.getElementById('alertBox');
+      box.textContent = message;
+      box.className = `alert alert--${type}`;
+      box.style.display = 'block';
+    }
+
+    function hideAlert() {
+      document.getElementById('alertBox').style.display = 'none';
+    }
+
+    function openCreateModal() {
+      document.getElementById('createModal').style.display = 'flex';
+    }
+
+    function closeCreateModal() {
+      document.getElementById('createModal').style.display = 'none';
+    }
+
+    async function loadEvents() {
+      const grid = document.getElementById('eventsGrid');
+      hideAlert();
+
+      try {
+        const data = await API.get('/events');
+        const events = data.data || [];
+
+        if (!events.length) {
+          grid.innerHTML = '<p style="color:var(--text-muted);">No upcoming events.</p>';
+          return;
+        }
+
+        grid.innerHTML = events.map((eventItem) => {
+          const description = eventItem.description || '';
+          const trimmedDescription = description.length > 100 ? `${description.substring(0, 100)}...` : description;
+
+          return `
+            <div class="event-card">
+              <div class="event-card__type">${escHtml(eventItem.event_type)}</div>
+              <h3>${escHtml(eventItem.title)}</h3>
+              <p class="event-card__meta">${new Date(eventItem.start_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</p>
+              <p class="event-card__meta">${escHtml(eventItem.location || 'TBD')}</p>
+              <p class="event-card__meta">${eventItem.participant_count} registered${eventItem.max_capacity ? ` / ${eventItem.max_capacity}` : ''}</p>
+              <p style="font-size:0.85rem;color:var(--text-muted);margin-top:10px;">${escHtml(trimmedDescription)}</p>
+              <div class="event-card__actions">
+                <button class="btn btn--primary" style="font-size:0.85rem;padding:9px 20px;" onclick="registerEvent(${eventItem.event_id}, this)">Register</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        grid.innerHTML = '<p style="color:var(--text-muted);">Unable to load events.</p>';
+        showAlert(API.formatError(err, 'Unable to load events right now.'));
+      }
+    }
+
+    async function createEvent() {
+      hideAlert();
+
+      const body = {
+        title: document.getElementById('ev_title').value.trim(),
+        description: document.getElementById('ev_desc').value.trim(),
+        location: document.getElementById('ev_location').value.trim(),
+        event_type: document.getElementById('ev_type').value,
+        start_date: document.getElementById('ev_start').value,
+        end_date: document.getElementById('ev_end').value,
+        max_capacity: document.getElementById('ev_cap').value || null,
+      };
+
+      if (!body.title || !body.start_date || !body.end_date) {
+        showAlert('Title, start date, and end date are required.');
+        return;
+      }
+
+      if (new Date(body.end_date) <= new Date(body.start_date)) {
+        showAlert('End date must be after start date.');
+        return;
+      }
+
+      try {
+        await API.post('/events', body);
+        showAlert('Event created successfully.', 'success');
+        closeCreateModal();
+        await loadEvents();
+      } catch (err) {
+        showAlert(API.formatError(err, 'Unable to create event right now.'));
+      }
+    }
+
+    async function registerEvent(eventId, btn) {
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Registering...';
+
+      try {
+        await API.post(`/events/${eventId}/register`, {});
+        btn.textContent = 'Registered';
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = original;
+        showAlert(API.formatError(err, 'Unable to register for event.'));
+      }
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'index.html';
+    }
+
+    loadEvents();
+  </script>
+</body>
+</html>
