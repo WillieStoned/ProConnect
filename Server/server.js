@@ -19,6 +19,7 @@ const eventRoutes = require('./routes/events');
 const app = express();
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const IS_PRODUCTION = NODE_ENV === 'production';
+const IS_VERCEL = Boolean(process.env.VERCEL);
 const CLIENT_DIR = path.join(__dirname, '../Client');
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const VALID_NODE_ENVS = new Set(['development', 'test', 'production']);
@@ -316,22 +317,29 @@ async function startServer() {
   }
 }
 
-process.on('SIGINT', () => {
-  void shutdown('SIGINT');
-});
+function registerProcessHandlers() {
+  process.on('SIGINT', () => {
+    void shutdown('SIGINT');
+  });
 
-process.on('SIGTERM', () => {
-  void shutdown('SIGTERM');
-});
+  process.on('SIGTERM', () => {
+    void shutdown('SIGTERM');
+  });
 
-process.on('unhandledRejection', (reason) => {
-  console.error('Unhandled promise rejection:', reason);
-  void shutdown('UNHANDLED_REJECTION', 1);
-});
+  process.on('unhandledRejection', (reason) => {
+    console.error('Unhandled promise rejection:', reason);
+    void shutdown('UNHANDLED_REJECTION', 1);
+  });
 
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught exception:', err);
-  void shutdown('UNCAUGHT_EXCEPTION', 1);
-});
+  process.on('uncaughtException', (err) => {
+    console.error('Uncaught exception:', err);
+    void shutdown('UNCAUGHT_EXCEPTION', 1);
+  });
+}
 
-startServer();
+if (require.main === module && !IS_VERCEL) {
+  registerProcessHandlers();
+  void startServer();
+}
+
+module.exports = app;
