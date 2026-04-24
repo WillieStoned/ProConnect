@@ -53,66 +53,28 @@ function extractJsonPayload(text) {
   return text.slice(firstBrace, lastBrace + 1);
 }
 
-function parseReport(text) {
-  if (!text) {
-    return null;
-  }
-
-  const trimmed = text.trim();
-  if (!trimmed) {
-    return null;
-  }
-
-  const candidates = [trimmed, extractJsonPayload(trimmed)].filter(Boolean);
-  for (const candidate of candidates) {
-    try {
-      return JSON.parse(candidate);
-    } catch {
-      // Keep trying with the next candidate.
-    }
-  }
-  return null;
-}
-
-const report = parseReport(stdout) || parseReport(stderr) || parseReport(rawOutput);
-if (!report) {
+let report;
+try {
+  report = JSON.parse(extractJsonPayload(rawOutput));
+} catch (err) {
   console.error('Failed to parse npm audit output as JSON.');
+  console.error(err.message || String(err));
   process.exit(1);
 }
 
-function buildSummary(auditReport) {
-  const metadataSummary = auditReport?.metadata?.vulnerabilities;
-  if (metadataSummary) {
-    return {
-      critical: Number(metadataSummary.critical || 0),
-      high: Number(metadataSummary.high || 0),
-      moderate: Number(metadataSummary.moderate || 0),
-      low: Number(metadataSummary.low || 0),
-      info: Number(metadataSummary.info || 0),
-    };
-  }
-
-  const summary = { critical: 0, high: 0, moderate: 0, low: 0, info: 0 };
-  const vulnObj = auditReport?.vulnerabilities;
-  if (!vulnObj || typeof vulnObj !== 'object') {
-    return null;
-  }
-
-  for (const value of Object.values(vulnObj)) {
-    const severity = String(value?.severity || '').toLowerCase();
-    if (severity in summary) {
-      summary[severity] += 1;
-    }
-  }
-
-  return summary;
-}
-
-const summary = buildSummary(report);
-if (!summary) {
+const vulnerabilities = report?.metadata?.vulnerabilities;
+if (!vulnerabilities) {
   console.error('npm audit output is missing vulnerability metadata.');
   process.exit(1);
 }
+
+const summary = {
+  critical: Number(vulnerabilities.critical || 0),
+  high: Number(vulnerabilities.high || 0),
+  moderate: Number(vulnerabilities.moderate || 0),
+  low: Number(vulnerabilities.low || 0),
+  info: Number(vulnerabilities.info || 0),
+};
 
 console.log('Security audit summary (runtime dependencies):');
 console.log(`- critical: ${summary.critical}`);
@@ -137,3 +99,4 @@ if (hasBlocking) {
 }
 
 console.log(`Security gate passed at threshold "${failLevel}".`);
+ 
