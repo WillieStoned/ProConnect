@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Create Account â€” ProConnect</title>
+  <title>Create Account - ProConnect</title>
   <script src="theme.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
@@ -80,12 +80,12 @@
       if (!valid) return;
 
       btn.disabled = true;
-      btn.innerHTML = '<div class="spinner"></div> Creating accountâ€¦';
+      btn.innerHTML = '<div class="spinner"></div> Creating account...';
 
       try {
         const data = await API.post('/auth/register', { full_name, email, password });
         if (data?.success) {
-          showAlert('Account created! Redirecting to sign inâ€¦', 'success');
+          showAlert('Account created! Redirecting to sign in...', 'success');
           setTimeout(() => window.location.href = 'login.html', 1500);
         } else {
           showAlert(data?.message || 'Registration failed. Please try again.', 'error');

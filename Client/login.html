@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign In â€” ProConnect</title>
+  <title>Sign In - ProConnect</title>
   <script src="theme.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
@@ -70,14 +70,14 @@
       if (!valid) return;
 
       btn.disabled = true;
-      btn.innerHTML = '<div class="spinner"></div> Signing inâ€¦';
+      btn.innerHTML = '<div class="spinner"></div> Signing in...';
 
       try {
         const data = await API.post('/auth/login', { email, password });
         if (data?.success) {
           localStorage.setItem('pc_token', data.token);
           localStorage.setItem('pc_user', JSON.stringify(data.data));
-          showAlert('Login successful! Redirectingâ€¦', 'success');
+          showAlert('Login successful! Redirecting...', 'success');
           setTimeout(() => window.location.href = 'dashboard.html', 800);
         } else {
           showAlert(data?.message || 'Login failed. Please check your details.', 'error');

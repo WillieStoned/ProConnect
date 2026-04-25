@@ -83,23 +83,23 @@ http://localhost:5000
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/api/auth/register` | âŒ | Create account |
-| POST | `/api/auth/login` | âŒ | Login, receive JWT |
-| GET | `/api/auth/me` | âœ… | Get own profile |
-| GET | `/api/users?q=` | âœ… | Search users |
-| GET | `/api/users/:id` | âŒ | Public profile |
-| PUT | `/api/users/me` | âœ… | Update profile |
-| POST | `/api/users/me/resume` | âœ… | Upload PDF resume |
-| GET | `/api/connections` | âœ… | My connections |
-| GET | `/api/connections/pending` | âœ… | Pending requests |
-| POST | `/api/connections/request/:userId` | âœ… | Send request |
-| PUT | `/api/connections/:id/respond` | âœ… | Accept/Reject |
-| GET | `/api/messages` | âœ… | Inbox |
-| POST | `/api/messages` | âœ… | Send message |
-| GET | `/api/messages/:userId` | âœ… | Conversation |
-| GET | `/api/events` | âŒ | List events |
-| POST | `/api/events` | âœ… | Create event |
-| POST | `/api/events/:id/register` | âœ… | Register for event |
+| POST | `/api/auth/register` | No | Create account |
+| POST | `/api/auth/login` | No | Login, receive JWT |
+| GET | `/api/auth/me` | Yes | Get own profile |
+| GET | `/api/users?q=` | Yes | Search users |
+| GET | `/api/users/:id` | No | Public profile |
+| PUT | `/api/users/me` | Yes | Update profile |
+| POST | `/api/users/me/resume` | Yes | Upload PDF resume |
+| GET | `/api/connections` | Yes | My connections |
+| GET | `/api/connections/pending` | Yes | Pending requests |
+| POST | `/api/connections/request/:userId` | Yes | Send request |
+| PUT | `/api/connections/:id/respond` | Yes | Accept/Reject |
+| GET | `/api/messages` | Yes | Inbox |
+| POST | `/api/messages` | Yes | Send message |
+| GET | `/api/messages/:userId` | Yes | Conversation |
+| GET | `/api/events` | No | List events |
+| POST | `/api/events` | Yes | Create event |
+| POST | `/api/events/:id/register` | Yes | Register for event |
 
 All protected routes require: `Authorization: Bearer <token>`
 
