@@ -11,5 +11,8 @@
     "lint": "npm --prefix Server run lint",
     "security:scan": "npm --prefix Server run security:scan",
     "build": "npm --prefix Server run build"
+  },
+  "dependencies": {
+    "@vercel/speed-insights": "^2.0.0"
   }
 }
