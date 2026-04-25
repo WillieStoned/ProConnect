@@ -1,22 +1,5 @@
 const { pool } = require('../config/database');
-const fs = require('fs');
-const path = require('path');
-
-function resolveUploadRoot() {
-  return process.env.UPLOAD_PATH || path.join(__dirname, '../uploads');
-}
-
-function deleteStoredFileIfPresent(fileUrl) {
-  if (!fileUrl || !fileUrl.startsWith('/uploads/')) {
-    return;
-  }
-
-  const uploadRoot = resolveUploadRoot();
-  const storedPath = path.join(uploadRoot, path.basename(fileUrl));
-  if (fs.existsSync(storedPath)) {
-    fs.unlinkSync(storedPath);
-  }
-}
+const { uploadUserAsset, deleteUserAsset } = require('../../src/services/asset-storage');
 
 // GET /api/users/:userId - public profile
 async function getProfile(req, res) {
@@ -62,9 +45,13 @@ async function uploadResume(req, res) {
 
   try {
     const [existing] = await pool.query('SELECT resume_url FROM users WHERE user_id = ?', [user_id]);
-    deleteStoredFileIfPresent(existing[0]?.resume_url);
+    await deleteUserAsset(existing[0]?.resume_url);
 
-    const resume_url = `/uploads/${req.file.filename}`;
+    const resume_url = await uploadUserAsset({
+      userId: user_id,
+      kind: 'resume',
+      file: req.file,
+    });
     await pool.query('UPDATE users SET resume_url = ? WHERE user_id = ?', [resume_url, user_id]);
 
     return res.status(200).json({ success: true, message: 'Resume uploaded.', data: { resume_url } });
@@ -84,9 +71,13 @@ async function uploadAvatar(req, res) {
 
   try {
     const [existing] = await pool.query('SELECT avatar_url FROM users WHERE user_id = ?', [user_id]);
-    deleteStoredFileIfPresent(existing[0]?.avatar_url);
+    await deleteUserAsset(existing[0]?.avatar_url);
 
-    const avatar_url = `/uploads/${req.file.filename}`;
+    const avatar_url = await uploadUserAsset({
+      userId: user_id,
+      kind: 'avatar',
+      file: req.file,
+    });
     await pool.query('UPDATE users SET avatar_url = ? WHERE user_id = ?', [avatar_url, user_id]);
 
     return res.status(200).json({ success: true, message: 'Profile photo uploaded.', data: { avatar_url } });

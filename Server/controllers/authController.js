@@ -1,7 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
-require('dotenv').config();
 
 // POST /api/auth/register
 async function register(req, res) {

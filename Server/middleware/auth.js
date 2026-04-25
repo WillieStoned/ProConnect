@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
 
 // Middleware: verify JWT and attach user to request
 function authenticateToken(req, res, next) {

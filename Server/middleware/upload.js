@@ -1,26 +1,4 @@
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-require('dotenv').config();
-
-// Ensure upload directory exists
-const uploadDir = process.env.UPLOAD_PATH || path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-function createStorage(prefix) {
-  return multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = `${req.user.user_id}_${Date.now()}`;
-      const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, `${prefix}_${uniqueSuffix}${ext}`);
-    },
-  });
-}
 
 function createFileFilter(allowedMimeTypes, errorMessage) {
   return (req, file, cb) => {
@@ -33,7 +11,7 @@ function createFileFilter(allowedMimeTypes, errorMessage) {
 }
 
 const uploadResume = multer({
-  storage: createStorage('resume'),
+  storage: multer.memoryStorage(),
   fileFilter: createFileFilter(
     ['application/pdf'],
     'Only PDF files are allowed for resume uploads.'
@@ -44,7 +22,7 @@ const uploadResume = multer({
 });
 
 const uploadAvatar = multer({
-  storage: createStorage('avatar'),
+  storage: multer.memoryStorage(),
   fileFilter: createFileFilter(
     ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
     'Only JPG, PNG, and WEBP images are allowed for profile photos.'
