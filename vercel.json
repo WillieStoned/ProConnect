@@ -2,34 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index.js",
+      "src": "Server/index.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "Client/**",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "^/api/(.*)$",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "^/uploads/(.*)$",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "^/Client/(.*)$",
-      "dest": "/Client/$1"
-    },
-    {
-      "src": "^/$",
-      "dest": "/Client/index.html"
-    },
-    {
-      "src": "^/(.*)$",
-      "dest": "/Client/$1"
+      "src": "/(.*)",
+      "dest": "Server/index.js"
     }
   ]
 }
