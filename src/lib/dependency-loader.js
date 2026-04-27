@@ -23,6 +23,10 @@ function loadDependency(name) {
   try {
     return require(name);
   } catch (err) {
+    if (err.code && err.code !== 'MODULE_NOT_FOUND') {
+      throw err;
+    }
+
     const fromRoot = tryLoadFrom(ROOT_DIR, ROOT_NODE_MODULES, name);
     if (fromRoot) {
       return fromRoot;
@@ -31,6 +35,20 @@ function loadDependency(name) {
     const fromServer = tryLoadFrom(SERVER_DIR, SERVER_NODE_MODULES, name);
     if (fromServer) {
       return fromServer;
+    }
+
+    const explicitRootPath = path.join(ROOT_NODE_MODULES, name);
+    try {
+      return require(explicitRootPath);
+    } catch {
+      // ignore and continue fallback
+    }
+
+    const explicitServerPath = path.join(SERVER_NODE_MODULES, name);
+    try {
+      return require(explicitServerPath);
+    } catch {
+      // ignore and continue fallback
     }
 
     throw new Error(
