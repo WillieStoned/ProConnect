@@ -11,6 +11,6 @@ const candidatePaths = [
   path.join(REPO_ROOT, 'Server/.env'),
 ].filter((filePath) => fs.existsSync(filePath));
 
-if (candidatePaths.length > 0) {
-  dotenv.config({ path: candidatePaths, quiet: true });
+for (const envPath of candidatePaths) {
+  dotenv.config({ path: envPath, quiet: true });
 }

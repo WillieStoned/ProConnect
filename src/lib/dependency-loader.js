@@ -20,19 +20,23 @@ function tryLoadFrom(baseDir, expectedPrefix, dependencyName) {
 }
 
 function loadDependency(name) {
-  const fromRoot = tryLoadFrom(ROOT_DIR, ROOT_NODE_MODULES, name);
-  if (fromRoot) {
-    return fromRoot;
-  }
+  try {
+    return require(name);
+  } catch (err) {
+    const fromRoot = tryLoadFrom(ROOT_DIR, ROOT_NODE_MODULES, name);
+    if (fromRoot) {
+      return fromRoot;
+    }
 
-  const fromServer = tryLoadFrom(SERVER_DIR, SERVER_NODE_MODULES, name);
-  if (fromServer) {
-    return fromServer;
-  }
+    const fromServer = tryLoadFrom(SERVER_DIR, SERVER_NODE_MODULES, name);
+    if (fromServer) {
+      return fromServer;
+    }
 
-  throw new Error(
-    `Unable to resolve dependency "${name}". Install dependencies in repo root or in Server/.`
-  );
+    throw new Error(
+      `Unable to resolve dependency "${name}". Install dependencies in repo root or in Server/.`
+    );
+  }
 }
 
 module.exports = { loadDependency };
