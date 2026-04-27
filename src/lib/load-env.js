@@ -2,9 +2,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const { loadDependency } = require('./dependency-loader');
 
-const dotenv = loadDependency('dotenv');
+const dotenv = require('dotenv');
 const REPO_ROOT = path.join(__dirname, '../..');
 const candidatePaths = [
   path.join(REPO_ROOT, '.env'),
