@@ -3,11 +3,9 @@
 const path = require('path');
 require('./lib/load-env');
 
-const { loadDependency } = require('./lib/dependency-loader');
-
-const express = loadDependency('express');
-const cors = loadDependency('cors');
-const rateLimit = loadDependency('express-rate-limit');
+const express = require('express');
+const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 
 const apiRoutes = require('./routes');
 const { requestIdMiddleware } = require('./middleware/request-id');
@@ -27,7 +25,7 @@ const {
   getLocalUploadsDir,
 } = require('./services/asset-storage');
 
-const { version: serverVersion } = require('../Server/package.json');
+const { version: serverVersion } = require('../package.json');
 
 const app = express();
 const CLIENT_DIR = path.join(__dirname, '../Client');

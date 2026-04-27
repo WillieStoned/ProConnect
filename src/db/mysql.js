@@ -2,9 +2,7 @@
 
 require('../lib/load-env');
 
-const { loadDependency } = require('../lib/dependency-loader');
-
-const mysql = loadDependency('mysql2/promise');
+const mysql = require('mysql2/promise');
 
 function parseBooleanEnv(value, fallback = false) {
   if (value === undefined || value === null || value === '') {

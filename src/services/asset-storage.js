@@ -6,8 +6,6 @@ const path = require('path');
 
 require('../lib/load-env');
 
-const { loadDependency } = require('../lib/dependency-loader');
-
 const REPO_ROOT = path.join(__dirname, '../..');
 const DEFAULT_UPLOAD_DIR = path.join(REPO_ROOT, 'Server/uploads');
 const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN || '';
@@ -63,7 +61,7 @@ function buildAssetFileName({ userId, kind, originalName, mimeType }) {
 
 function loadBlobClient() {
   try {
-    return loadDependency('@vercel/blob');
+    return require('@vercel/blob');
   } catch (err) {
     const wrapped = new Error(
       'Vercel Blob is enabled via BLOB_READ_WRITE_TOKEN but @vercel/blob is not installed.'
